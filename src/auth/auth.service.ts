@@ -241,19 +241,17 @@ export class AuthService {
     const existing = await this.usersRepo.findOne({ where: { email } });
     if (existing) throw new ConflictException('Email already registered');
 
+    const username = dto.username.toLowerCase().trim();
+
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    if (dto.username) {
-      const taken = await this.usersRepo.findOne({
-        where: { username: dto.username.toLowerCase() },
-      });
-      if (taken) throw new ConflictException('Username already taken');
-    }
+    const taken = await this.usersRepo.findOne({ where: { username } });
+    if (taken) throw new ConflictException('Username already taken');
 
     const user = await this.usersRepo.save(
       this.usersRepo.create({
         id: randomUUID(),
         email,
-        username: dto.username ? dto.username.toLowerCase() : null,
+        username,
         passwordHash,
         provider: 'password',
       }),

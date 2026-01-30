@@ -6,6 +6,9 @@ import { UserEntity } from '../auth/user.entity';
 
 @Injectable()
 export class LeaderboardService {
+  private readonly cacheTtlMs = 30_000;
+  private readonly cache = new Map<string, { expiresAt: number; value: any }>();
+
   constructor(
     @InjectRepository(PostEntity)
     private readonly postsRepo: Repository<PostEntity>,
@@ -13,9 +16,28 @@ export class LeaderboardService {
     private readonly usersRepo: Repository<UserEntity>,
   ) {}
 
+  private getCached<T>(key: string): T | undefined {
+    const hit = this.cache.get(key);
+    if (!hit) return undefined;
+    if (hit.expiresAt <= Date.now()) {
+      this.cache.delete(key);
+      return undefined;
+    }
+    return hit.value as T;
+  }
+
+  private setCached<T>(key: string, value: T) {
+    this.cache.set(key, { expiresAt: Date.now() + this.cacheTtlMs, value });
+    return value;
+  }
+
   async topPosts(params: { offset?: number; limit?: number }) {
     const offset = Math.max(0, params.offset ?? 0);
     const limit = Math.min(200, Math.max(1, params.limit ?? 15));
+
+    const cacheKey = `topPosts:${offset}:${limit}`;
+    const cached = this.getCached<any>(cacheKey);
+    if (cached) return cached;
 
     const qb = this.postsRepo
       .createQueryBuilder('p')
@@ -34,7 +56,7 @@ export class LeaderboardService {
 
     const vibeScores = raw.map((r) => Number(r?.vibescore ?? 0));
 
-    return {
+    return this.setCached(cacheKey, {
       items: entities.map((p, i) => ({
         id: p.id,
         kind: p.kind,
@@ -51,12 +73,16 @@ export class LeaderboardService {
       })),
       offset,
       limit,
-    };
+    });
   }
 
   async topHashtags(params: { offset?: number; limit?: number }) {
     const offset = Math.max(0, params.offset ?? 0);
     const limit = Math.min(200, Math.max(1, params.limit ?? 20));
+
+    const cacheKey = `topHashtags:${offset}:${limit}`;
+    const cached = this.getCached<any>(cacheKey);
+    if (cached) return cached;
 
     const rows = (await this.postsRepo.query(
       [
@@ -71,19 +97,23 @@ export class LeaderboardService {
       [offset, limit],
     )) as Array<{ tag: string; count: number }>;
 
-    return {
+    return this.setCached(cacheKey, {
       items: rows.map((r) => ({
         tag: r.tag.startsWith('#') ? r.tag : `#${r.tag}`,
         count: Number(r.count) || 0,
       })),
       offset,
       limit,
-    };
+    });
   }
 
   async topUsers(params: { offset?: number; limit?: number }) {
     const offset = Math.max(0, params.offset ?? 0);
     const limit = Math.min(100, Math.max(1, params.limit ?? 20));
+
+    const cacheKey = `topUsers:${offset}:${limit}`;
+    const cached = this.getCached<any>(cacheKey);
+    if (cached) return cached;
 
     const users = await this.usersRepo.find({
       order: {
@@ -93,7 +123,7 @@ export class LeaderboardService {
       take: limit,
     });
 
-    return {
+    return this.setCached(cacheKey, {
       items: users.map((u) => ({
         id: u.id,
         username: u.username ?? null,
@@ -107,6 +137,6 @@ export class LeaderboardService {
       })),
       offset,
       limit,
-    };
+    });
   }
 }
