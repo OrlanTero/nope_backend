@@ -88,7 +88,7 @@ export class FeedService {
     qb.groupBy('p.id').addGroupBy('u.id');
 
     if (currentUserId) {
-      qb.orderBy('"isInteracted"', 'ASC');
+      qb.orderBy('isInteracted', 'ASC');
     }
 
     qb.addOrderBy('score', 'DESC')
@@ -220,8 +220,8 @@ export class FeedService {
 
     qb.groupBy('p.id')
       .addGroupBy('u.id')
-      .orderBy('"isInteracted"', 'ASC')
-      .addOrderBy('"activityAt"', 'DESC')
+      .orderBy('isInteracted', 'ASC')
+      .addOrderBy('activityAt', 'DESC')
       .addOrderBy('p.createdAt', 'DESC')
       .skip(offset)
       .take(limit);

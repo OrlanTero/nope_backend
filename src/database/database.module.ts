@@ -53,7 +53,7 @@ import { AdminEntity } from '../admin/admin.entity';
           NotificationEntity,
           RecommendationEntity,
         ],
-        synchronize: false,
+        synchronize: String(config.get('NODE_ENV') ?? 'development') !== 'production',
       }),
     }),
   ],
