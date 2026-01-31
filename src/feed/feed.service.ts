@@ -77,7 +77,7 @@ export class FeedService {
     if (currentUserId) {
       qb.addSelect(
         `(EXISTS (SELECT 1 FROM swipes s0 WHERE s0."userId" = :currentUserId AND s0."postId" = "p"."id"))`,
-        'isInteracted',
+        'isinteracted',
       );
       qb.addSelect(
         `(SELECT verdict FROM swipes WHERE "userId" = :currentUserId AND "postId" = "p"."id" LIMIT 1)`,
@@ -88,7 +88,7 @@ export class FeedService {
     qb.groupBy('p.id').addGroupBy('u.id');
 
     if (currentUserId) {
-      qb.orderBy('isInteracted', 'ASC');
+      qb.orderBy('isinteracted', 'ASC');
     }
 
     qb.addOrderBy('score', 'DESC')
@@ -148,7 +148,7 @@ export class FeedService {
             "p"."createdAt"
           )
         )`,
-        'activityAt',
+        'activityat',
       )
       .addSelect(
         "COALESCE(SUM(CASE WHEN s.verdict = 'DOPE' THEN 1 ELSE 0 END), 0)",
@@ -210,7 +210,7 @@ export class FeedService {
 
     qb.addSelect(
       `(EXISTS (SELECT 1 FROM swipes s0 WHERE s0."userId" = :currentUserId AND s0."postId" = "p"."id"))`,
-      'isInteracted',
+      'isinteracted',
     );
 
     qb.addSelect(
@@ -220,8 +220,8 @@ export class FeedService {
 
     qb.groupBy('p.id')
       .addGroupBy('u.id')
-      .orderBy('isInteracted', 'ASC')
-      .addOrderBy('activityAt', 'DESC')
+      .orderBy('isinteracted', 'ASC')
+      .addOrderBy('activityat', 'DESC')
       .addOrderBy('p.createdAt', 'DESC')
       .skip(offset)
       .take(limit);
