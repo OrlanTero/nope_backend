@@ -43,7 +43,10 @@ export class FeedService {
     };
   }
 
-  async getTrending(currentUserId?: string) {
+  async getTrending(currentUserId?: string, page?: { offset?: number; limit?: number }) {
+    const offset = Math.max(0, page?.offset ?? 0);
+    const limit = Math.min(200, Math.max(1, page?.limit ?? 30));
+
     const qb = this.postsRepo
       .createQueryBuilder('p')
       .leftJoinAndSelect('p.creator', 'u')
@@ -88,7 +91,10 @@ export class FeedService {
       qb.orderBy('"isInteracted"', 'ASC');
     }
 
-    qb.addOrderBy('score', 'DESC').addOrderBy('p.createdAt', 'DESC').limit(200);
+    qb.addOrderBy('score', 'DESC')
+      .addOrderBy('p.createdAt', 'DESC')
+      .skip(offset)
+      .take(limit);
 
     const { entities, raw } = await qb.getRawAndEntities();
     return {
@@ -100,13 +106,18 @@ export class FeedService {
           raw[i],
         ),
       ),
+      offset,
+      limit,
     };
   }
 
-  async getFollowing(currentUserId?: string) {
+  async getFollowing(currentUserId?: string, page?: { offset?: number; limit?: number }) {
     if (!currentUserId) {
       return { items: [] };
     }
+
+    const offset = Math.max(0, page?.offset ?? 0);
+    const limit = Math.min(200, Math.max(1, page?.limit ?? 30));
 
     const qb = this.postsRepo
       .createQueryBuilder('p')
@@ -212,7 +223,8 @@ export class FeedService {
       .orderBy('"isInteracted"', 'ASC')
       .addOrderBy('"activityAt"', 'DESC')
       .addOrderBy('p.createdAt', 'DESC')
-      .limit(200);
+      .skip(offset)
+      .take(limit);
 
     const { entities, raw } = await qb.getRawAndEntities();
     return {
@@ -224,6 +236,8 @@ export class FeedService {
           raw[i],
         ),
       ),
+      offset,
+      limit,
     };
   }
 

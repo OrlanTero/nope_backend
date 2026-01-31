@@ -1,4 +1,4 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { FeedService } from './feed.service';
@@ -17,19 +17,28 @@ export class FeedController {
 
   @UseGuards(JwtAuthGuard)
   @Get('trending')
-  trending(@Req() req: AuthedRequest) {
-    return this.feedService.getTrending(req.user?.userId);
+  trending(@Req() req: AuthedRequest, @Query('offset') offset?: string, @Query('limit') limit?: string) {
+    return this.feedService.getTrending(req.user?.userId, {
+      offset: offset ? Number(offset) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('vibes')
-  vibes(@Req() req: AuthedRequest) {
-    return this.feedService.getTrending(req.user?.userId);
+  vibes(@Req() req: AuthedRequest, @Query('offset') offset?: string, @Query('limit') limit?: string) {
+    return this.feedService.getTrending(req.user?.userId, {
+      offset: offset ? Number(offset) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('following')
-  following(@Req() req: AuthedRequest) {
-    return this.feedService.getFollowing(req.user?.userId);
+  following(@Req() req: AuthedRequest, @Query('offset') offset?: string, @Query('limit') limit?: string) {
+    return this.feedService.getFollowing(req.user?.userId, {
+      offset: offset ? Number(offset) : undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
   }
 }
