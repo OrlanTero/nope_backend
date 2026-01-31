@@ -211,6 +211,104 @@ export class SocialService {
     };
   }
 
+  async listFollowers(params: { viewerId: string; userId: string; offset?: number; limit?: number }) {
+    const offset = Math.max(0, params.offset ?? 0);
+    const limit = Math.min(200, Math.max(1, params.limit ?? 30));
+
+    const u = await this.usersRepo.findOne({ where: { id: params.userId } });
+    if (!u) throw new NotFoundException('User not found');
+
+    const blocked = await this.blocksRepo.findOne({ where: { blockerId: params.userId, blockedId: params.viewerId } });
+    if (blocked) throw new ForbiddenException('User not available');
+
+    const rows = await this.followsRepo.find({
+      where: { followingId: params.userId },
+      order: { createdAt: 'DESC' },
+      skip: offset,
+      take: limit,
+    });
+
+    const ids = rows.map((r) => r.followerId);
+    if (ids.length === 0) return { items: [], offset, limit };
+
+    const users = await this.usersRepo.find({ where: { id: In(ids) } });
+    const byId = new Map(users.map((x) => [x.id, x]));
+
+    const followedByViewer = await this.followsRepo.find({
+      where: {
+        followerId: params.viewerId,
+        followingId: In(ids),
+      },
+    });
+    const viewerFollowing = new Set(followedByViewer.map((r) => r.followingId));
+
+    const items = rows
+      .map((r) => {
+        const x = byId.get(r.followerId);
+        if (!x) return null;
+        return {
+          id: x.id,
+          username: x.username ?? null,
+          displayName: x.displayName ?? null,
+          avatarUrl: x.avatarUrl ?? null,
+          isFollowing: viewerFollowing.has(x.id),
+          isMe: x.id === params.viewerId,
+        };
+      })
+      .filter(Boolean);
+
+    return { items, offset, limit };
+  }
+
+  async listFollowing(params: { viewerId: string; userId: string; offset?: number; limit?: number }) {
+    const offset = Math.max(0, params.offset ?? 0);
+    const limit = Math.min(200, Math.max(1, params.limit ?? 30));
+
+    const u = await this.usersRepo.findOne({ where: { id: params.userId } });
+    if (!u) throw new NotFoundException('User not found');
+
+    const blocked = await this.blocksRepo.findOne({ where: { blockerId: params.userId, blockedId: params.viewerId } });
+    if (blocked) throw new ForbiddenException('User not available');
+
+    const rows = await this.followsRepo.find({
+      where: { followerId: params.userId },
+      order: { createdAt: 'DESC' },
+      skip: offset,
+      take: limit,
+    });
+
+    const ids = rows.map((r) => r.followingId);
+    if (ids.length === 0) return { items: [], offset, limit };
+
+    const users = await this.usersRepo.find({ where: { id: In(ids) } });
+    const byId = new Map(users.map((x) => [x.id, x]));
+
+    const followedByViewer = await this.followsRepo.find({
+      where: {
+        followerId: params.viewerId,
+        followingId: In(ids),
+      },
+    });
+    const viewerFollowing = new Set(followedByViewer.map((r) => r.followingId));
+
+    const items = rows
+      .map((r) => {
+        const x = byId.get(r.followingId);
+        if (!x) return null;
+        return {
+          id: x.id,
+          username: x.username ?? null,
+          displayName: x.displayName ?? null,
+          avatarUrl: x.avatarUrl ?? null,
+          isFollowing: viewerFollowing.has(x.id),
+          isMe: x.id === params.viewerId,
+        };
+      })
+      .filter(Boolean);
+
+    return { items, offset, limit };
+  }
+
   async recordVisit(params: { visitorId: string; visitedUserId: string }) {
     if (params.visitorId === params.visitedUserId) return { ok: true };
 

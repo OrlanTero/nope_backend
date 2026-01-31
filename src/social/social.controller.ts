@@ -52,6 +52,28 @@ export class SocialController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Get(':id/followers')
+  followers(@Req() req: AuthedRequest, @Param('id') id: string, @Query() q: ListProfilePostsDto) {
+    return this.socialService.listFollowers({
+      viewerId: req.user.userId,
+      userId: id,
+      offset: q.offset,
+      limit: q.limit,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/following')
+  following(@Req() req: AuthedRequest, @Param('id') id: string, @Query() q: ListProfilePostsDto) {
+    return this.socialService.listFollowing({
+      viewerId: req.user.userId,
+      userId: id,
+      offset: q.offset,
+      limit: q.limit,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get(':id/posts')
   posts(@Req() req: AuthedRequest, @Param('id') id: string, @Query() q: ListProfilePostsDto) {
     return this.socialService.listProfilePosts({
